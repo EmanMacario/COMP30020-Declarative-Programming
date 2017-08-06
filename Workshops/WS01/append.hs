@@ -5,10 +5,9 @@
 -- Function type declaration
 append :: [t] -> [t] -> [t]
 
-
 -- Function definition
 -- Base Case: Appending empty-list onto another (possibly empty) list
-append []     ys = ys
+append [] ys     = ys
 
 -- Recursive Case: Append head of left list to head of right list
 append (x:xs) ys = x : append xs ys

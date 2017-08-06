@@ -2,6 +2,8 @@ Declarative Programming
 
 Workshop exercises set 1 (for workshops in week 2).
 
+-------------------------------------------------------------------------------
+
 QUESTION 1
 What are the most annoying limitations of a programming language you
 have used?  It would be good if you posted something on this topic to
@@ -11,6 +13,7 @@ Answer: Segmentation faults in C, boxing/unboxing in Java, polymorphism, dynamic
 type system in Python (unable to distinguish type until run-time), 
 no pointers in Python.
 
+-------------------------------------------------------------------------------
 
 QUESTION 2
 What are some useful Haskell resources on the web?
@@ -21,6 +24,7 @@ LearnYouAHaskell
 Haskel Wikibook
 Real World Haskell
 
+-------------------------------------------------------------------------------
 
 QUESTION 3
 What will be printed by this C code fragment?
@@ -42,10 +46,24 @@ What will be printed by this C code fragment?
         }
 
 What does this show about the impact of side effects in C?
+
+ANSWER:
 C specification doesn't specify what order function arguments are parsed in,
 which may lead to side effects.
 
+The two preincrements of i in the call to f are side effects. C does not
+guarantee the order of evaluation of side effects, which means that several
+possible outputs are possible.
 
+- If preincrements are executed left to right, the output will be 12.
+- If preincrements are executed right to left, the output will be 21.
+
+This shows that side effects in C can make program testing much harder.
+
+This problem cannot occur in Haskell, since in Haskell, there are no side 
+effects.
+
+-------------------------------------------------------------------------------
 
 QUESTION 4
 Fix the formatting errors (due the offside rule) in the following code,
@@ -63,7 +81,20 @@ four = len [1,
  len (x:xs) = 1 + len xs
 
 
-Answer: 
+ANSWER:
+
+zero = len []
+one
+ = len []
+two = len [1,2] 
+three = len [1,2,3]      -- has to be on new line
+four = len [1,
+       2,3,
+           4]
+len []     = 0           -- has to start in column 0
+len (x:xs) = 1 + len xs  -- has to start in column 0
+
+-------------------------------------------------------------------------------
 
 QUESTION 5
 Implement a function to perform the logical XOR (exclusive or)
@@ -86,3 +117,5 @@ QUESTION 8
 Implement a function 'getNthElem' which takes an integer 'n' and a list, and
 returns the nth element of the list.
 
+
+For Q5-Q8, answers are written in separate .hs files (See Git repository)
