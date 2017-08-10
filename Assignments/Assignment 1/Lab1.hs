@@ -15,7 +15,7 @@ subst 'e' 'o' "dog" should return "dog"
 subst 'e' 'o' "elephant" should return "olophant"
 -}
 subst :: Eq t => t -> t -> [t] -> [t]
-subst a b [] = []
+subst _ _ [] = []
 subst a b xs = if head xs == a
                then
                    [b] ++ subst a b (tail xs)
@@ -39,17 +39,17 @@ interleave "tlpone" "eeh" should return "telephone"
 
 -}
 
-interLeave :: [t] -> [t] -> [t]
-interLeave xs [] = xs
-interLeave [] xs = xs
-interLeave xs ys = [head xs] ++ interLeave ys (tail xs) 
+interleave :: [t] -> [t] -> [t]
+interleave xs [] = xs
+interleave [] xs = xs
+interleave xs ys = [head xs] ++ interleave ys (tail xs) 
 
 
 -- QUESTION 3
 {- 
     unroll :: Int -> [a] -> [a]
     unroll takes a list and an integer and constructs a list of the specified length made up
-    by \unrolling" the input list as many times as needed to construct a list of that length.
+    by "unrolling" the input list as many times as needed to construct a list of that length.
     That is, the output consists of the input list repeated as many times as necessary to
     have the specifed length. For example:
 
@@ -59,8 +59,8 @@ interLeave xs ys = [head xs] ++ interLeave ys (tail xs)
 -}
 
 unroll :: Int -> [a] -> [a]
-unroll 0 xs = []
-unroll n [] = []
-unroll n xs = 
+unroll 0 _  = []
+unroll _ [] = []
+unroll n (x:xs) = x : unroll (n-1) (xs ++ [x])
 
 
