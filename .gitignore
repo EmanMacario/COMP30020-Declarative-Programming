@@ -1,0 +1,4 @@
+# Ignore all .hi and .o files, plus any compiled executables
+*.o
+*.hi
+*bin/
