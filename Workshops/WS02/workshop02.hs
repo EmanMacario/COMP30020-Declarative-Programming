@@ -1,4 +1,4 @@
--- COMP30020: Week 2 Workshop Question Solutions
+-- COMP30020: Week 3 Workshop Question Solutions
 -- Date: 9/08/17
 -- Author: Emmanuel Macario <macarioe>
 
