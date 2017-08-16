@@ -1,11 +1,11 @@
 -- COMP30020: Week 4 Workshop Question Solutions
--- Date: 14/08/17
+-- Date: 16/08/17
 -- Author: Emmanuel Macario <macarioe>
 
 -- QUESTION 1
 -- I would have the web server program generate the output in the form of a 
 -- representation such as the HTML type of the previous question, and then 
--- convert that to a string and then print the string. This is so we cannot
+-- convert that to a string and then print the string. This is so there cannot
 -- have tags and attributes that violate syntax, since each tag or attribute
 -- has to be an instance of a particular discriminated union type.
 
@@ -20,13 +20,26 @@ ftoc f = (5 / 9) * (f - 32)
 -- Computes the roots of the quadratic equation defined by
 -- 0 = a*x^2 + b*x + c, given a, b, and c
 quadRoots :: Double -> Double -> Double -> [Double]
+quadRoots 0 b c = [(-c)/b]
 quadRoots a b c = [(-b + sqrt (b^2 - 4*a*c))/(2*a), 
                         (-b - sqrt (b^2 - 4*a*c))/(2*a)]
 
 
+-- Rob's Solution:
+quadRoots' :: Double -> Double -> Double -> [Double]
+quadRoots' a b c
+    | disc > 0   = [left - right, left + right]
+    | disc == 0  = [left]
+    | otherwise  = error "No real solutions"
+    where
+        disc   = b*b - 4*a*c
+        left  = - b / (2*a)
+        right = sqrt (det) / (2*a)
+
+
 -- QUESTION 4
 -- Merges two sorted lists into a single sorted list
-merge :: (Ord a) => [a] -> [a] -> [a]
+merge :: Ord a => [a] -> [a] -> [a]
 merge [] xs = xs
 merge ys [] = ys
 merge (x:xs) (y:ys) 
@@ -48,7 +61,7 @@ quicksort (pivot:xs) = quicksort lt ++ [pivot] ++ quicksort gtet
 
 
 -- QUESTION 6
--- BST Type Declaration
+-- BST Type Declaration. Note that the 'k' and 'v' are type variables
 data Tree k v = Leaf | Node k v (Tree k v) (Tree k v)
         deriving (Eq, Show)
 
@@ -60,6 +73,21 @@ same_shape Leaf (Node _ _ _ _) = False
 same_shape (Node _ _ _ _) Leaf = False
 same_shape (Node _ _ t1 t2) (Node _ _ t3 t4) = same_shape t1 t3 
                                                 && same_shape t2 t4 
+
+
+{-
+
+Rob's Solution:
+
+Let a = (k,v) in
+    data Tree a = Leaf | Node a (Tree a) (Tree a)
+    sameShape :: Tree a -> Tree b -> Bool
+    sameShape Leaf Leaf  = True
+    sameShape (Node _ l1 r1) (Node _ l2 r2) = sameShape l1 l2 && 
+                                                            sameShape r1 && r2
+    sameShape _ _ = False
+
+-}
 
 
 -- QUESTION 7
@@ -90,6 +118,7 @@ eval a b (Plus expr1 expr2) = (eval a b expr1) + (eval a b expr2)
 eval a b (Minus expr1 expr2) = (eval a b expr1) - (eval a b expr2)
 eval a b (Times expr1 expr2) = (eval a b expr1) * (eval a b expr2)
 eval a b (Div expr1 expr2) = quot (eval a b expr1) (eval a b expr2)
+
 
 
 --------------------------------------------------------------------------------
