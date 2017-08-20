@@ -57,4 +57,4 @@ assoc_list_to_bst :: [(String, Int)] -> Tree
 assoc_list_to_bst [] = Leaf
 assoc_list_to_bst ((hk ,hv):kvs) =
     let t0 = assoc_list_to_bst kvs
-    in insert_bst t0 hk kv
+    in insert_bst t0 hk hv
