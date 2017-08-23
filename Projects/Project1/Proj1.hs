@@ -8,32 +8,102 @@
     Origin: 19:00 Fri 18 Aug 2017
 
     Purpose: The purpose of this module is to implement the guessing part
-    of a logical guessing game, named 'ChordProbe'.
+    of the logical guessing game, named 'ChordProbe'.
 
 ------------------------------------------------------------------------------}
 
 module Proj1 (initialGuess, nextGuess, GameState) where
 
+
 import Data.List
-import qualified Data.Set as Set
 
 
--- Basic Types for a 'Pitch'
-type Note   = Char
-type Octave = Char
+-- A standard note. Notes are ordered alphabetically.
 
--- 'Pitch' Type, containing one 'Note' and one 'Octave'
-data Pitch = Pitch {
-  note   :: Note
-, octave :: Octave
-} deriving (Show, Eq)
+data Note = A | B | C | D | E | F | G
+          deriving (Eq, Ord, Bounded, Enum)
 
--- 'Chord' Type, containing three distinct instances of a 'Pitch'
-data Chord = Chord { 
-  p1  :: Pitch
-, p2  :: Pitch
-, p3  :: Pitch
-} deriving (Show, Eq)
+notechars = "ABCDEFG"
+
+instance Show Note where
+    show n = [notechars !! fromEnum n]
+
+
+
+-- A standard octave. Octaves are in the range 1-3, 
+-- where 1 is the lowest octave and 3 is the highest.
+
+data Octave = One | Two | Three
+            deriving (Eq, Ord, Bounded, Enum)
+
+octavechars = "123"
+
+instance Show Octave where
+    show o = [octavechars !! fromEnum o]
+
+
+
+-- A standard pitch. Flats and sharps are not included.
+-- Each pitch contains one standard note and one standard 
+-- octave.
+
+data Pitch = Pitch { 
+               note   :: Note
+             , octave :: Octave
+             } deriving (Eq, Ord, Bounded)
+
+
+instance Show Pitch where
+    show (Pitch n o) = show n ++ show o
+
+
+
+-- FINISH OFF DERIVING AN INSTANCE FOR READ
+
+
+instance Enum Pitch where
+    fromEnum (Pitch n o) = (length octavechars) * (fromEnum n) + (fromEnum o)
+    toEnum int = (Pitch n o) 
+        where 
+            n = toEnum $ int `div` (length octavechars)
+            o = toEnum $ int `mod` (length octavechars)
+
+
+
+-- A standard chord. Includes three distinct standard pitches.
+data Chord = Chord {
+             pitchOne   :: Pitch
+           , pitchTwo   :: Pitch
+           , pitchThree :: Pitch
+           } deriving (Eq)
+
+
+
+-- TESTING SOME SHIT OUT
+p1 = Pitch A One
+p2 = Pitch G Two
+p3 = Pitch D Three
+
+chord = Chord p1 p2 p3
+
+
+-- Enumerate a list of all possible pitches
+allPitches = [minBound..maxBound] :: [Pitch]
+
+
+-- Enumerates a search space consisting of all possible 
+-- target chords. Ensures that there are no duplicates.
+createSearchSpace :: [Pitch] -> SearchSpace
+createSearchSpace allPitches = nub $ map sort allChords
+        where allChords = 
+                [ 
+                    [show p1, show p2, show p3] 
+                        | p1 <- allPitches,
+                          p2 <- filter (\p -> p /= p1) allPitches,
+                          p3 <- filter (\p -> p /= p1 && p /= p2) allPitches
+                ]
+
+
 
 
 -- 'TargetChords' Type, which contains all remaining possible chords,
@@ -43,57 +113,32 @@ type SearchSpace = [[String]]
 
 -- 'PreviousGuesses' Type is a list of chords, used for holding
 -- previous guesses.
-type PreviousGuesses = [Chord]
+type PreviousGuesses = [[String]]
 
 
--- 'PreviousAnswers' Type is a list of 3-tuples of integers, used for
--- holding answers to previous guesses.
+-- 'PreviousAnswers' Type is a list of 3-tuples of integers, 
+-- used for holding answers to previous guesses.
 type PreviousAnswers = [(Int, Int, Int)]
 
 
 -- 'GameState' type holds the current state of the game
 data GameState = GameState {
-    targets :: SearchSpace
-}
-
--- Testing syntax
-targetChords =  [
-                    Chord 
-                    { 
-                      p1 = Pitch {note = 'A', octave = '1'}
-                    , p2 = Pitch {note = 'B', octave = '3'}
-                    , p3 = Pitch {note = 'C', octave = '2'}
-                    },
-
-                    Chord {
-                        p1 = Pitch {note = 'G', octave = '1'}
-                    ,   p2 = Pitch {note = 'F', octave = '3'}
-                    ,   p3 = Pitch {note = 'C', octave = '1'}
-                    }
-                ]
+                 targets         :: SearchSpace
+               , previousGuesses :: PreviousGuesses
+               , previousAnswers :: PreviousAnswers
+               }
 
 
--- Valid notes and octaves.
-noteChars = "ABCDEFG"
-octaveChars = "123"
 
--- Enumerates all possible pitches.
-allPitches = [ [p, o] | p <- noteChars, o <- octaveChars ]
 
--- Enumerates all possible target chords prior to game start, ensuring
--- that there are no duplicates.
-searchSpace = nub $ map sort allChords
-    where allChords =                                                            -- Note:
-            [ [p1, p2, p3] | p1 <- allPitches,                                   -- Could just change [p1,p2,p3] if you wanted
-                             p2 <- filter (\p -> p /= p1) allPitches,            -- to use another type instead of list to store
-                             p3 <- filter (\p -> p /= p1 && p /= p2) allPitches  -- target chords.
-            ]
-
+searchSpace = createSearchSpace allPitches 
 
 
 -- Now, initialise the 'GameState' before the game begins.
 gamestate = GameState {
-    targets = tail searchSpace
+    targets = tail searchSpace,
+    previousGuesses = [],
+    previousAnswers = []
 }
 
 
@@ -108,32 +153,28 @@ initialGuess = (head searchSpace, gamestate)
 -- to this guess as a triple of correct pitches, notes, and octaves, and returns
 -- a pair of the next guess and game state.
 nextGuess :: ([String], GameState) -> (Int, Int, Int) -> ([String], GameState)
-nextGuess ((c1:c2:c3:[]), gamestate) (p,n,o) = (head $ targets gamestate, 
-                                                updateGameState gamestate)
+nextGuess (lastGuess, gamestate) (p,n,o) = 
+                    (head $ targets gamestate, 
+                            updateGameState gamestate lastGuess (p,n,o))
 
 
 
 
-updateGameState :: GameState -> GameState
-updateGameState gamestate = newgamestate
+-- Updates the state of the game.
+updateGameState :: GameState -> [String] -> (Int, Int, Int) -> GameState
+updateGameState gamestate lastGuess lastAnswer = newgamestate
     where newgamestate = GameState {
                             targets = tail $ targets gamestate
+                         ,  previousGuesses = lastGuess : previousGuesses gamestate
+                         ,  previousAnswers = lastAnswer : previousAnswers gamestate
                          }
 
 
 
--- Function to reduce down possible answers
+-- Reduces the search space, by removing target chords that do 
+-- not align with the received answers from previous guesses.
+-- reduceSearchSpace :: [String] -> (Int, Int, Int) -> SearchSpace -> SearchSpace
 
 
 
--- Function to rank possible answers
-
-
-
-{- 
-
-GAME IDEAS:
-
-
-
--}
+-- Function to rank target chords with respect to guess optimality
