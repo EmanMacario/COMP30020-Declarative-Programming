@@ -50,10 +50,8 @@ data Pitch = Pitch {
              , octave :: Octave
              } deriving (Eq, Ord, Bounded)
 
-
 instance Show Pitch where
     show (Pitch n o) = show n ++ show o
-
 
 instance Enum Pitch where
     fromEnum (Pitch n o) = (length octavechars) * (fromEnum n) + (fromEnum o)
@@ -112,6 +110,8 @@ x4 = ["A3","B2","C1"]
 y4 = ["C3","A2","B1"]
 
 
+--------------------------------------------------------------------------------
+
 -- Enumerate a list of all possible pitches
 allPitches = [minBound..maxBound] :: [Pitch]
 
@@ -140,7 +140,6 @@ state = GameState {
 }
 
 
-
 -- Takes no input arguments, and returns a 2-tuple, including 
 -- an initial guess chord and the intial game state.
 initialGuess :: ([String], GameState)
@@ -149,13 +148,16 @@ initialGuess = (["A1","B2","C3"], state)
 
 -- Takes as input a pair of the previous guess and game state, and the feedback
 -- to this guess as a triple of correct pitches, notes, and octaves, and returns
--- a pair of the next guess and game state.
+-- a 2-tuple of the next guess and game state.
 nextGuess :: ([String], GameState) -> (Int, Int, Int) -> ([String], GameState)
 nextGuess (lastGuess, state) lastAnswer = (newGuess, newState)
     where
         newState = updateGameState state lastGuess lastAnswer
-        newGuess = head $ targets newState
-
+        newGuess = if not $ null $ targets newState
+                   then
+                       head $ targets newState
+                   else
+                       []
 
 
 -- Updates the state of the game, given the current game state,
@@ -163,15 +165,14 @@ nextGuess (lastGuess, state) lastAnswer = (newGuess, newState)
 updateGameState :: GameState -> [String] -> (Int, Int, Int) -> GameState
 updateGameState state lastGuess lastAnswer = newState
     where newState = GameState {
-                      targets = reduceSearchSpace lastGuess lastAnswer (tail (targets state))
-                   ,  prevGuesses = lastGuess : prevGuesses state
+                      targets = reduceSearchSpace lastGuess lastAnswer (targets state)
                    ,  prevAnswers = lastAnswer : prevAnswers state
+                   ,  prevGuesses = lastGuess  : prevGuesses state
                    }
 
 
 -- Reduces the search space, by removing target chords that do 
 -- not align with the received answers from previous guesses.
-
 reduceSearchSpace :: [String] -> (Int, Int, Int) -> SearchSpace -> SearchSpace
 reduceSearchSpace lastGuess lastAnswer searchSpace = 
     [ newGuess | newGuess <- searchSpace, 
@@ -182,82 +183,31 @@ reduceSearchSpace lastGuess lastAnswer searchSpace =
 -- argument is the guess. The third argument is the matching score.
 isValid :: [String] -> [String] -> (Int, Int, Int) -> Bool
 isValid lastGuess newGuess lastAnswer = 
-                            response lastGuess newGuess == lastAnswer 
+                            answer lastGuess newGuess == lastAnswer 
 
 
 
-intersectNoDuplicates ::Eq a => [a] -> [a] -> [a]
-intersectNoDuplicates xs ys = xs \\ (xs \\ ys)
-
-
-
--- Computes the answer to a guess. First argument is the 
--- target, second is the guess.
+-- Computes the answer to a guess. First argument 
+-- is the target, second is the guess.
 answer :: [String] -> [String] -> (Int, Int, Int)
 answer targetChord lastGuess = (correct, correctNotes, correctOctaves)
-    where correct = length $ intersect targetChord lastGuess
+    where samePitches       = intersect targetChord lastGuess
+          correct           = length $ samePitches
 
-          num     = length lastGuess
+          -- Leftover notes from pitches uncommon to both
+          -- target and guess chords.
+          leftTargetNotes   = map (!! 0) (targetChord \\ samePitches)
+          leftGuessNotes    = map (!! 0) (lastGuess \\ samePitches)
 
-          x = lastGuess \\ (intersect targetChord lastGuess)
-          y = targetChord \\ (intersect targetChord lastGuess)
+          -- Leftover octaves from pitches uncommon to both
+          -- target and guess chords.
+          leftTargetOctaves = map (!! 1) (targetChord \\ samePitches)
+          leftGuessOctaves  = map (!! 1) (lastGuess \\ samePitches)
 
-
-          guessNotes     = map (!! 0) x
-          targetNotes    = map (!! 0) y
-
-          guessOctaves   = map (!! 1) x
-          targetOctaves  = map (!! 1) y
-
-          correctNotes   = 3 - length (deleteIntersect targetNotes guessNotes)
-          correctOctaves = 3 - length (deleteIntersect targetOctaves guessOctaves)
-
-
-
-
-
-deleteIntersect :: [Char] -> [Char] -> [Char]
-deleteIntersect xs []  = xs
-deleteIntersect xs ys = if elem (head ys) xs 
-                        then
-                            deleteIntersect (xs \\ [head ys]) (tail ys)
-                        else
-                            deleteIntersect xs (tail ys)
-
-
-
--- | Compute the correct answer to a guess.  First argument is the 
---   target, second is the guess.
-response :: [String] -> [String] -> (Int,Int,Int)
-response target guess = (right, rightNote, rightOctave)
-  where guess'      = nub guess
-        right       = length $ intersect guess' target
-        num         = length guess'
-        rightNote   = num - (length $ deleteFirstsBy (eqNth 0) guess' target) 
-                    - right
-        rightOctave = num - (length $ deleteFirstsBy (eqNth 1) guess' target) 
-                    - right
-
-
--- | eqNth n l1 l2 returns True iff element n of l1 is equal to 
---   element n of l2.
-eqNth :: Eq a => Int -> [a] -> [a] -> Bool
-eqNth n l1 l2 = (l1 !! n) == (l2 !! n)
-
-
-
-
--- Takes target chord and a guess and returns intersect
-getIntersect :: [Char] -> [Char] -> [Char]
-getIntersect [] _ = []
-getIntersect xs ys = 
-    if head xs `elem` ys
-    then 
-        getIntersect (tail xs) ys
-    else
-        head xs : getIntersect xs ys
-
-
+          correctNotes      = length leftTargetNotes - 
+                                  length (leftTargetNotes \\ leftGuessNotes)
+          correctOctaves    = length leftTargetOctaves -
+                                  length (leftTargetOctaves \\ leftGuessOctaves)
 
 
 
