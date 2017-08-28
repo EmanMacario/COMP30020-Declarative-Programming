@@ -86,13 +86,6 @@ data GameState = GameState {
 
 -------------------------------------------------------------------------------
 
-
--- TESTING SOME SHIT OUT
-p1 = Pitch A One
-p2 = Pitch G Two
-p3 = Pitch D Three
-
-
 -- (1,2,1)
 x1 = ["A1","B2","A3"]
 y1 = ["A1","A2","B1"]
@@ -120,17 +113,28 @@ allPitches = [minBound..maxBound] :: [Pitch]
 -- target chords. Ensures that there are no duplicates.
 createSearchSpace :: [Pitch] -> SearchSpace
 createSearchSpace allPitches = nub $ map sort allChords
-        where allChords = 
-                [ map show [p1, p2, p3] | 
-                        p1 <- allPitches,
-                        p2 <- filter (\p -> p /= p1) allPitches,
-                        p3 <- filter (\p -> p /= p1 && p /= p2) allPitches ]
+    where 
+        allChords = 
+            [ map show [p1,p2,p3] | p1 <- allPitches,
+                                    p2 <- filter (\p -> p /= p1) allPitches,
+                                    p3 <- filter (\p -> p /= p1 && p /= p2) allPitches]
 
+
+
+-- Enumerates an answer space, consisting of all possible
+-- answers, except for (3,0,0).
+createAnswerSpace :: [(Int, Int, Int)]
+createAnswerSpace = nub $ sort allAnswers  
+        where allAnswers =
+                [ answer c1 c2 | c1 <- searchSpace,
+                                 c2 <- filter (\c -> c /= c1) searchSpace ]
 
 
 -- Create the initial 'search space', consisting of all possible chords.
 searchSpace = createSearchSpace allPitches 
 
+-- Create the 'answer space', consisting of all possible answers.
+answerSpace = createAnswerSpace
 
 -- Now, initialise the 'GameState' before the game begins.
 state = GameState {
@@ -153,11 +157,15 @@ nextGuess :: ([String], GameState) -> (Int, Int, Int) -> ([String], GameState)
 nextGuess (lastGuess, state) lastAnswer = (newGuess, newState)
     where
         newState = updateGameState state lastGuess lastAnswer
+        newGuess = head $ targets newState
+
+        {--
         newGuess = if not $ null $ targets newState
                    then
                        head $ targets newState
                    else
                        []
+        --}
 
 
 -- Updates the state of the game, given the current game state,
@@ -186,7 +194,6 @@ isValid lastGuess newGuess lastAnswer =
                             answer lastGuess newGuess == lastAnswer 
 
 
-
 -- Computes the answer to a guess. First argument 
 -- is the target, second is the guess.
 answer :: [String] -> [String] -> (Int, Int, Int)
@@ -211,5 +218,57 @@ answer targetChord lastGuess = (correct, correctNotes, correctOctaves)
 
 
 
--- Function to rank target chords with respect to guess optimality
 
+-- Apply 'minimax' technique to find the next optimal guess. This is achieved
+-- by computing for each possible guess, the minimum number of possible chords
+-- that it may eliminate from the search space.
+
+
+
+-- One traversal version
+trip' :: Num a => [a] -> (Int, a, a)
+trip' xs = go xs (0, 0, 0)
+    where
+        go [] acc = acc
+        go (x:xs) (c, s, sq) = go xs (c+1, x+s, sq+x^2)
+
+
+
+{- 
+-- Returns the guess that most likely leaves the lowest number of
+-- possible chords in the search space.
+miniMaxPossibilities :: [String] -> SearchSpace -> [(Int, Int, Int)] -> [String] 
+miniMaxPossibilities guess [] _ = guess 
+miniMaxPossibilities guess searchSpace answerSpace = 
+-}
+
+
+-- Takes a target, search space, a list of guesses, and then returns
+-- the minimum number of possible targets a given guess can eliminate.
+maxPossibilities :: [String] -> SearchSpace -> [(Int,Int,Int)] -> Int
+maxPossibilities target searchSpace answerSpace
+        = maximum [ iterScore' target searchSpace score | score <- answerSpace ]
+
+
+-- Takes a target, a search space, and an answer, and
+-- returns the number of chords that will remain in the search
+-- space given a particular score.
+iterScore :: [String] -> SearchSpace -> (Int,Int,Int) -> Int
+iterScore _ [] _ = 0
+iterScore target searchSpace rAnswer =
+        let guess = head searchSpace in
+        if answer target guess == rAnswer
+        then 
+            1 + iterScore target (tail searchSpace) rAnswer
+        else
+            iterScore target (tail searchSpace) rAnswer
+
+
+
+-- Rename this to 'numPossibilities'
+-- Calculates the number of possibilities left in the search space that remain
+-- after filtering the guesses that don't align with an artificial score,
+-- for a given target.
+iterScore' :: [String] -> SearchSpace -> (Int, Int, Int) -> Int
+iterScore' target searchSpace answer =
+    length $ reduceSearchSpace target answer searchSpace
