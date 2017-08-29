@@ -157,7 +157,10 @@ nextGuess :: ([String], GameState) -> (Int, Int, Int) -> ([String], GameState)
 nextGuess (lastGuess, state) lastAnswer = (newGuess, newState)
     where
         newState = updateGameState state lastGuess lastAnswer
-        newGuess = head $ targets newState
+
+        allTargets = miniMax (targets newState) (targets newState) answerSpace 
+
+        newGuess = getOptimalGuess allTargets
 
         {--
         newGuess = if not $ null $ targets newState
@@ -220,55 +223,42 @@ answer targetChord lastGuess = (correct, correctNotes, correctOctaves)
 
 
 -- Apply 'minimax' technique to find the next optimal guess. This is achieved
--- by computing for each possible guess, the minimum number of possible chords
+-- by computing for each possible target, the minimum number of possible chords
 -- that it may eliminate from the search space.
 
 
 
--- One traversal version
-trip' :: Num a => [a] -> (Int, a, a)
-trip' xs = go xs (0, 0, 0)
-    where
-        go [] acc = acc
-        go (x:xs) (c, s, sq) = go xs (c+1, x+s, sq+x^2)
+-- Returns the guess that will leave the minimum maximum possible targets.
+miniMax :: SearchSpace -> SearchSpace -> [(Int, Int, Int)] -> [(Int,[String])] 
+miniMax [] _ _ = []
+miniMax targets searchSpace answerSpace = 
+    let target = head targets
+        maxNumTargets = maxPossibilities target searchSpace answerSpace
+    in
+        [maxNumTargets] ++ miniMax (tail targets) searchSpace answerSpace
 
 
 
-{- 
--- Returns the guess that most likely leaves the lowest number of
--- possible chords in the search space.
-miniMaxPossibilities :: [String] -> SearchSpace -> [(Int, Int, Int)] -> [String] 
-miniMaxPossibilities guess [] _ = guess 
-miniMaxPossibilities guess searchSpace answerSpace = 
--}
-
-
--- Takes a target, search space, a list of guesses, and then returns
--- the minimum number of possible targets a given guess can eliminate.
-maxPossibilities :: [String] -> SearchSpace -> [(Int,Int,Int)] -> Int
-maxPossibilities target searchSpace answerSpace
-        = maximum [ iterScore' target searchSpace score | score <- answerSpace ]
-
-
--- Takes a target, a search space, and an answer, and
--- returns the number of chords that will remain in the search
--- space given a particular score.
-iterScore :: [String] -> SearchSpace -> (Int,Int,Int) -> Int
-iterScore _ [] _ = 0
-iterScore target searchSpace rAnswer =
-        let guess = head searchSpace in
-        if answer target guess == rAnswer
-        then 
-            1 + iterScore target (tail searchSpace) rAnswer
-        else
-            iterScore target (tail searchSpace) rAnswer
+-- Takes a target chord, a search space consisting of remaining possible 
+-- targets, a list of answers, and computes the maximum number of possible
+-- targets that will be left if you guess that target chord.
+maxPossibilities :: [String] -> SearchSpace -> [(Int,Int,Int)] -> (Int,[String])
+maxPossibilities target searchSpace answerSpace = (maxNumTargets,target)
+    where maxNumTargets 
+            = maximum [ numPossibilities target searchSpace score | 
+                                                   score <- answerSpace ]
 
 
 
--- Rename this to 'numPossibilities'
 -- Calculates the number of possibilities left in the search space that remain
 -- after filtering the guesses that don't align with an artificial score,
 -- for a given target.
-iterScore' :: [String] -> SearchSpace -> (Int, Int, Int) -> Int
-iterScore' target searchSpace answer =
+numPossibilities :: [String] -> SearchSpace -> (Int, Int, Int) -> Int
+numPossibilities target searchSpace answer =
     length $ reduceSearchSpace target answer searchSpace
+
+
+
+-- Returns the most optimal guess.
+getOptimalGuess :: [(Int, [String])] -> [String]
+getOptimalGuess allTargets = snd . head . sort $ allTargets

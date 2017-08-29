@@ -53,12 +53,14 @@ int main(int argc, char *argv[]) {
         count++;
     }
 
-    /* Now, check that we tested ALL the possible target chords
+    /* Now, check if we have tested ALL the possible target chords
        for a given guess. */
     if (count != MAX_TARGETS) {
-        printf("Error: all 1,330 test cases were not ran successfully.");
-        exit(EXIT_FAILURE);
+        printf("Note: Not all 1,330 test cases were ran for this trial.");
     }
+
+    /* Print the number of tests. */
+    printf("Number of tests : %3d\n", count);
 
     /* Compute the average number of guesses, and print the result. */
     avg_guesses = (1.0 * total_guesses) / count;
