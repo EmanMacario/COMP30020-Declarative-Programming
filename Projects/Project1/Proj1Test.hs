@@ -69,12 +69,12 @@ main = do
 
 loop :: [String] -> [String] -> Proj1.GameState -> Int -> IO ()
 loop target guess other guesses = do
-  --putStrLn $ "Your guess " ++ show guesses ++ ":  " ++ show guess
+  putStrLn $ "Your guess " ++ show guesses ++ ":  " ++ show guess
   if validChord guess then do
     let answer = response target guess
-    --putStrLn $ "My answer:  " ++ show answer
+    putStrLn $ "My answer:  " ++ show answer
     if answer == (3,0,0) then do
-      --putStrLn $ "You got it in " ++ show guesses ++ " guesses!"
+      putStrLn $ "You got it in " ++ show guesses ++ " guesses!"
       putStrLn $ show guesses
       else do
       let (guess',other') = nextGuess (guess,other) answer

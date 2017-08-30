@@ -250,9 +250,9 @@ maxPossibilities target searchSpace answerSpace = (maxNumTargets,target)
 
 
 
--- Calculates the number of possibilities left in the search space that remain
--- after filtering the guesses that don't align with an artificial score,
--- for a given target.
+-- For a given target chord, calculates the number of possibilities left in 
+-- the search space that remain after filtering the guesses that don't 
+-- align with an artificial score.
 numPossibilities :: [String] -> SearchSpace -> (Int, Int, Int) -> Int
 numPossibilities target searchSpace answer =
     length $ reduceSearchSpace target answer searchSpace
@@ -261,4 +261,14 @@ numPossibilities target searchSpace answer =
 
 -- Returns the most optimal guess.
 getOptimalGuess :: [(Int, [String])] -> [String]
-getOptimalGuess allTargets = snd . head . sort $ allTargets
+getOptimalGuess allTargets = snd $ foldr1 min allTargets 
+
+
+{- getOptimalGuess allTargets = snd . head . sort $ allTargets
+-}
+
+
+
+
+-- Can make a recursive function to compare two (Int,[String]) at a time and then
+-- return the least.
