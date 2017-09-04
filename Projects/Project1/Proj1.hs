@@ -212,20 +212,3 @@ nextGuess (lastGuess, state) lastAnswer = (newGuess, newState)
     where
         newState = updateGameState state lastGuess lastAnswer
         newGuess = getOptimalGuess newState
-
-
-
-
--------------------------------------------------------------------------------
-
-x1 = ["A1","B2","A3"]
-y1 = ["A1","A2","B1"]
-
-x2 = ["A1","B2","C3"]
-y2 = ["A1","A2","A3"]
-
-x3 = ["A1","B1","C1"]
-y3 = ["A2","D1","E1"]
-
-x4 = ["A3","B2","C1"]
-y4 = ["C3","A2","B1"]
