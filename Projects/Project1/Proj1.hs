@@ -10,9 +10,9 @@ module Proj1 (initialGuess, nextGuess, GameState) where
 
 import Data.List
 
-
 ----
----      Code for implementation of data types used to create a chord,
+---
+--       Code for implementation of data types used to create a chord,
 --              and data structures used for the GameState type.
 --
 --       Note that all types created for the chord are in the Bounded, 
@@ -69,7 +69,7 @@ data GameState = GameState { targets :: [[String]] }
 
 ----
 ---
---       Code for the implementation of the 'initialGuess' function
+--       Code for the implementation of the 'initialGuess' function.
 ---
 ----
 
@@ -103,7 +103,7 @@ initialGuess = (["A1","B1","C2"], initialiseGameState)
 
 ----
 ---
---          Code for the implementation of the 'nextGuess' function
+--          Code for the implementation of the 'nextGuess' function.
 ---
 ----
 
@@ -172,10 +172,10 @@ updateGameState state guess answer = updatedState
 expectedRemaining :: Fractional a => [String] -> [[String]] -> a
 expectedRemaining guess searchSpace = expectedAverage
     where 
-        -- Get total number of possible targets remaining
+        -- Get total number of possible targets remaining.
         nTargets = length searchSpace
 
-        -- Get all answers for a guess
+        -- Get all answers for a guess.
         answers = map (response' guess) [ target | target <- searchSpace ]
 
         -- Sort and group the answers. The length of a group
@@ -193,7 +193,7 @@ expectedRemaining guess searchSpace = expectedAverage
 -- by calculating the expected number of remaining targets
 -- for each possible guess, and choosing the guess that will
 -- leave the minimum expected number of remaining candidates.
-getOptimalGuess :: (Fractional a, Ord a) => GameState -> [String]
+getOptimalGuess :: GameState -> [String]
 getOptimalGuess state = optimalGuess
     where
         searchSpace  = targets state
