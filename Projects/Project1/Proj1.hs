@@ -1,67 +1,77 @@
-{-----------------------------------------------------------------------------
+--   File     : Proj1.hs
+--   Author   : Emmanuel Macario <macarioe> <831659>
+--   Origin   : 19:00 Fri 18 Aug 2017
+-- 
+--   Purpose  : To implement the guessing part of the logical 
+--              guessing game, named 'ChordProbe'.
 
-    File: Proj1.hs
-    Name: Emmanuel Macario <macarioe>
-    Student Number: 831659
-    Origin: 19:00 Fri 18 Aug 2017
-
-    Purpose: The purpose of this module is to implement the guessing part
-    of the logical guessing game, named 'ChordProbe'.
-
-------------------------------------------------------------------------------}
 
 module Proj1 (initialGuess, nextGuess, GameState) where
-
 
 import Data.List
 
 
+----
+---      Code for implementation of data types used to create a chord,
+--              and data structures used for the GameState type.
+--
+--       Note that all types created for the chord are in the Bounded, 
+---                    Enum, Ord, Eq and Show type classes.
+----
+
 -- A standard note. Notes are ordered alphabetically.
 data Note = A | B | C | D | E | F | G
-          deriving (Eq, Ord, Bounded, Enum)
+          deriving (Bounded, Enum, Ord, Eq)
 
 noteChars = ['A'..'G']
 
 instance Show Note where
-    show n = [noteChars !! fromEnum n]
+    show note = [noteChars !! fromEnum note]
 
 
 
--- A standard octave. Octaves are in the range 1-3, 
+-- A standard octave. Octaves are in the range 1 to 3, 
 -- where 1 is the lowest octave and 3 is the highest.
 data Octave = One | Two | Three
-            deriving (Eq, Ord, Bounded, Enum)
+            deriving (Bounded, Enum, Ord, Eq)
 
 octaveChars = ['1'..'3']
 
 instance Show Octave where
-    show o = [octaveChars !! fromEnum o]
+    show octave = [octaveChars !! fromEnum octave]
 
 
 
 -- A standard pitch. Flats and sharps are not included.
 -- Each pitch contains one standard note and one standard 
 -- octave.
-data Pitch = Pitch { 
-               note   :: Note
-             , octave :: Octave
-             } deriving (Eq, Ord, Bounded)
+data Pitch = Pitch { note :: Note, octave :: Octave } 
+           deriving (Bounded, Ord, Eq)
 
 instance Show Pitch where
-    show (Pitch n o) = show n ++ show o
+    show (Pitch note octave) = show note ++ show octave
 
 instance Enum Pitch where
-    fromEnum (Pitch n o) = (length octaveChars) * (fromEnum n) + (fromEnum o)
-    toEnum int = (Pitch n o) 
+    fromEnum (Pitch note octave) = (length octaveChars) * (fromEnum note) 
+                                                        + (fromEnum octave)
+    toEnum n = (Pitch note octave) 
         where 
-            n = toEnum $ int `div` (length octaveChars)
-            o = toEnum $ int `mod` (length octaveChars)
+            note   = toEnum $ n `div` (length octaveChars)
+            octave = toEnum $ n `mod` (length octaveChars)
+
 
 
 -- 'GameState' type holds the current state of the game, 
 -- including all possible target chords left.
 data GameState = GameState { targets :: [[String]] }
 
+
+
+----
+---
+--       Code for the implementation of the 'initialGuess' function
+---
+----
 
 -- Enumerates a search space consisting of all possible 
 -- target chords. Ensures that there are no duplicates.
@@ -73,7 +83,8 @@ createSearchSpace = allChords
                                             p3 <- allPitches, p1 < p2, p2 < p3 ]
 
 
--- Initialises the gamestate for a new game.
+
+-- Initialises the game state for a new game.
 initialiseGameState :: GameState
 initialiseGameState = newGameState
     where
@@ -81,124 +92,140 @@ initialiseGameState = newGameState
 
 
 
--- Takes no input arguments, and returns a 2-tuple, including 
--- an initial guess chord and the intial game state. 
--- Note the guess ["A1","B1","C2"] is the lexicographically least, 
--- and most optimal initial guess.
+-- Returns a 2-tuple, where the first element is the initial 
+-- guess, and the second element is the initial game state. Note 
+-- that the guess ["A1","B1","C2"] is the lexicographically 
+-- least, most optimal initial guess.
 initialGuess :: ([String], GameState)
 initialGuess = (["A1","B1","C2"], initialiseGameState)
 
 
--- Takes as input a pair of the previous guess and game state, and the feedback
--- to this guess as a 3-tuple of correct pitches, notes, and octaves, and 
--- returns a 2-tuple containing the next guess and updated game state.
-nextGuess :: ([String], GameState) -> (Int,Int,Int) -> ([String],GameState)
-nextGuess (lastGuess, state) lastAnswer = (newGuess, newState)
-    where
-        newState   = updateGameState state lastGuess lastAnswer
-        allTargets = miniMax' (targets newState) (targets newState)
-        newGuess   = getOptimalGuess' allTargets
 
+----
+---
+--          Code for the implementation of the 'nextGuess' function
+---
+----
 
--- Updates the state of the game, given the current game state,
--- previous guess, and answer to the previous guess.
-updateGameState :: GameState -> [String] -> (Int,Int,Int) -> GameState
-updateGameState state lastGuess lastAnswer = newState
+-- Own implementation of the 'response' function in 'Proj1Test.hs'.
+-- Computes the correct answer for a given guess. The first 
+-- argument is the target, the second argument is the guess.
+response' :: [String] -> [String] -> (Int,Int,Int)
+response' target guess = (correctPitches, correctNotes, correctOctaves)
     where 
-        newTargets = reduceSearchSpace lastGuess lastAnswer $ targets state
-        newState   = GameState { targets = newTargets }
+        -- Firstly, compute number of correct pitches in the guess.
+        samePitches       = intersect target guess
+        correctPitches    = length samePitches
 
-
--- Reduces the search space, by removing target chords that do 
--- not align with the received answers from previous guesses.
-reduceSearchSpace :: [String] -> (Int,Int,Int) -> [[String]] -> [[String]]
-reduceSearchSpace lastGuess lastAnswer searchSpace = updatedSearchSpace
-    where
-        updatedSearchSpace = [ chord | chord <- searchSpace, 
-                                       isValid lastGuess chord lastAnswer ]
-
-
--- Computes the answer to a guess. The first argument is the target, the second
--- argument is the guess. The third argument is the matching score.
-isValid :: [String] -> [String] -> (Int,Int,Int) -> Bool
-isValid lastGuess newGuess lastAnswer = answer lastGuess newGuess == lastAnswer 
-
-
--- Computes the answer to a guess. First argument 
--- is the target, second is the guess.
-answer :: [String] -> [String] -> (Int,Int,Int)
-answer targetChord lastGuess = (correct, correctNotes, correctOctaves)
-    where 
-        samePitches       = intersect targetChord lastGuess
-        correct           = length $ samePitches
-
-        -- Leftover notes from pitches uncommon to both
-        -- target and guess chords.
-        leftTargetNotes   = map (!! 0) (targetChord \\ samePitches)
-        leftGuessNotes    = map (!! 0) (lastGuess \\ samePitches)
-
-        -- Leftover octaves from pitches uncommon to both
-        -- target and guess chords.
-        leftTargetOctaves = map (!! 1) (targetChord \\ samePitches)
-        leftGuessOctaves  = map (!! 1) (lastGuess \\ samePitches)
-
+        -- Secondly, compute number of pitches in the guess 
+        -- with the correct note, but wrong octave.
+        leftTargetNotes   = map (!! 0) (target \\ samePitches)
+        leftGuessNotes    = map (!! 0) (guess \\ samePitches)
         correctNotes      = length leftTargetNotes - 
                                 length (leftTargetNotes \\ leftGuessNotes)
+
+        -- Lastly, compute number of pitches in the guess 
+        -- with the correct octave, but wrong note.
+        leftTargetOctaves = map (!! 1) (target \\ samePitches)
+        leftGuessOctaves  = map (!! 1) (guess \\ samePitches)
         correctOctaves    = length leftTargetOctaves -
                                 length (leftTargetOctaves \\ leftGuessOctaves)
 
 
 
+-- Returns a boolean, indicating whether the answer 
+-- computed for a guess and possible target is the 
+-- same as the actual answer received for that guess.
+isValid :: [String] -> [String] -> (Int,Int,Int) -> Bool
+isValid guess target answer = response' guess target == answer 
 
--- Apply 'minimax' technique to find the next optimal guess. This is achieved
--- by computing for each possible target, the minimum number of possible chords
--- that it may eliminate from the search space.
 
 
--- Given a target chord, and a list of all remaining possible guesses,
--- returns the expected average number of remaining chords.
-countDistinctAnswers :: Fractional a => [String] -> [[String]] -> a
-countDistinctAnswers target searchSpace = avgGuesses
+-- Returns a reduced search space, obtained by removing
+-- remaining possible target chords that are inconsistent
+-- with the answer received for the previous guess.
+reduceSearchSpace :: [String] -> (Int,Int,Int) -> [[String]] -> [[String]]
+reduceSearchSpace guess answer searchSpace = updatedSearchSpace
+    where
+        updatedSearchSpace = [ target | target <- searchSpace, 
+                                        isValid guess target answer ]
+
+
+
+-- Updates the state of the game, given the current game state,
+-- previous guess, and answer to the previous guess.
+updateGameState :: GameState -> [String] -> (Int,Int,Int) -> GameState
+updateGameState state guess answer = updatedState
     where 
-        total = length searchSpace
-        answers = sort $ map (answer target) [ guess | guess <- searchSpace ]
-        distinctAnswerCounts = map ((\n -> n * n) . length) $ group answers
-        avgGuesses = (fromIntegral $ sum distinctAnswerCounts) / 
-                                                        (fromIntegral total) 
+        updatedSearchSpace = reduceSearchSpace guess answer $ targets state
+        updatedState       = GameState { targets = updatedSearchSpace }
 
 
 
--- Returns the guess that will leave the minimum maximum possible targets.
-miniMax' :: Fractional a => [[String]] -> [[String]] -> [(a,[String])] 
-miniMax' [] _ = []
-miniMax' targets searchSpace = 
-    let target = head targets
-        avgTargets = (countDistinctAnswers target searchSpace, target)
-    in
-        avgTargets : miniMax' (tail targets) searchSpace
+-- Given a candidate target chord and the current search space,
+-- returns the expected (average) number of remaining chords in
+-- the search space if that guess were to be made. This is done by 
+-- collecting all distinct answers for a given guess and for each 
+-- answer, counting the number of targets that gave that answer. 
+-- From this, the expected average number of remaining targets can
+-- be calculated. 
+expectedRemaining :: Fractional a => [String] -> [[String]] -> a
+expectedRemaining guess searchSpace = expectedAverage
+    where 
+        -- Get total number of possible targets remaining
+        nTargets = length searchSpace
+
+        -- Get all answers for a guess
+        answers = map (response' guess) [ target | target <- searchSpace ]
+
+        -- Sort and group the answers. The length of a group
+        -- specifies the number of targets that gave that answer.
+        distinctAnswers = group $ sort answers
+
+        -- Now perform some calculations to get the expected
+        -- average remaining targets for the guess.
+        total = sum $ map ((\n -> n * n) . length) distinctAnswers
+        expectedAverage = fromIntegral total / fromIntegral nTargets
 
 
-getOptimalGuess' :: Fractional a => Ord a => [(a,[String])] -> [String]
-getOptimalGuess' allGuesses = snd $ foldl1 min allGuesses
+
+-- Returns the most optimal guess given the current game state,
+-- by calculating the expected number of remaining targets
+-- for each possible guess, and choosing the guess that will
+-- leave the minimum expected number of remaining candidates.
+getOptimalGuess :: (Fractional a, Ord a) => GameState -> [String]
+getOptimalGuess state = optimalGuess
+    where
+        searchSpace  = targets state
+        allGuesses   = [ (expectedRemaining target searchSpace, target) 
+                                                | target <- searchSpace ]
+
+        optimalGuess = snd $ foldl1 min allGuesses
+
+
+
+-- Takes as input a 2-tuple containing the previous guess and current
+-- game state, and the answer to the previous guess. Returns a 2-tuple 
+-- containing the next guess and updated game state.
+nextGuess :: ([String], GameState) -> (Int,Int,Int) -> ([String],GameState)
+nextGuess (lastGuess, state) lastAnswer = (newGuess, newState)
+    where
+        newState = updateGameState state lastGuess lastAnswer
+        newGuess = getOptimalGuess newState
+
+
 
 
 -------------------------------------------------------------------------------
 
--- (1,2,1)
 x1 = ["A1","B2","A3"]
 y1 = ["A1","A2","B1"]
 
--- (1,0,2)
 x2 = ["A1","B2","C3"]
 y2 = ["A1","A2","A3"]
 
--- (0,1,2)
 x3 = ["A1","B1","C1"]
 y3 = ["A2","D1","E1"]
 
--- (0,3,3)
 x4 = ["A3","B2","C1"]
 y4 = ["C3","A2","B1"]
-
-
---------------------------------------------------------------------------------
