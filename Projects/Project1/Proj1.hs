@@ -4,6 +4,14 @@
 -- 
 --   Purpose  : To implement the guessing part of the logical 
 --              guessing game, named 'ChordProbe'.
+--
+--
+--   This code contains a variety of data types and auxiliary functions
+--   to help implement the 'initialGuess' and 'nextGuess' functions, used 
+--   by the performer in the game 'ChordProbe'. The purpose of these 
+--   functions is to reduce symmetry in the problem space, in an attempt 
+--   to minimise the avergae number of guesses per target, while also
+--   trying to minimise worst case run-time complexity.
 
 
 module Proj1 (initialGuess, nextGuess, GameState) where
@@ -16,12 +24,12 @@ import Data.List
 --              and data structures used for the GameState type.
 --
 --       Note that all types created for the chord are in the Bounded, 
----                    Enum, Ord, Eq and Show type classes.
+---                  Enum, Ord, Eq and Show type classes.
 ----
 
 -- A standard note. Notes are ordered alphabetically.
 data Note = A | B | C | D | E | F | G
-          deriving (Bounded, Enum, Ord, Eq)
+          deriving (Enum, Bounded, Ord, Eq)
 
 noteChars = ['A'..'G']
 
@@ -33,7 +41,7 @@ instance Show Note where
 -- A standard octave. Octaves are in the range 1 to 3, 
 -- where 1 is the lowest octave and 3 is the highest.
 data Octave = One | Two | Three
-            deriving (Bounded, Enum, Ord, Eq)
+            deriving (Enum, Bounded, Ord, Eq)
 
 octaveChars = ['1'..'3']
 
@@ -61,6 +69,12 @@ instance Enum Pitch where
 
 
 
+-- Note: it has been decided to represent a chord as a list of
+-- Strings, instead of a more complicated data type/structure. This is
+-- purposely done to avoid unecessary conversions between character 
+-- representations of a chord, and normal Haskell data structures.
+
+
 -- 'GameState' type holds the current state of the game, 
 -- including all possible target chords left.
 data GameState = GameState { targets :: [[String]] }
@@ -69,7 +83,7 @@ data GameState = GameState { targets :: [[String]] }
 
 ----
 ---
---       Code for the implementation of the 'initialGuess' function.
+--        Code for the implementation of the 'initialGuess' function.
 ---
 ----
 
