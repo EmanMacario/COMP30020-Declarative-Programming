@@ -10,7 +10,7 @@
 --   to help implement the 'initialGuess' and 'nextGuess' functions, used 
 --   by the performer in the game 'ChordProbe'. The purpose of these 
 --   functions is to reduce symmetry in the problem space, in an attempt 
---   to minimise the avergae number of guesses per target, while also
+--   to minimise the average number of guesses per target, while also
 --   trying to minimise worst case run-time complexity.
 
 

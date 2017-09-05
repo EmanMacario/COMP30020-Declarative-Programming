@@ -75,7 +75,6 @@ loop target guess other guesses = do
     putStrLn $ "My answer:  " ++ show answer
     if answer == (3,0,0) then do
       putStrLn $ "You got it in " ++ show guesses ++ " guesses!"
-      putStrLn $ show guesses
       else do
       let (guess',other') = nextGuess (guess,other) answer
       loop target guess' other' (guesses+1)
