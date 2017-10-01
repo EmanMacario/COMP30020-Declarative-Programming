@@ -1,3 +1,5 @@
+% COMP30020 - Week 7 Workshop 6
+
 :- ensure_loaded(borders).
 :- ensure_loaded(cities).
 :- ensure_loaded(countries).
@@ -18,21 +20,25 @@
 
 
 % Question 4
-country(X) :- country(X, _, _, _, _, _, _, _).
+country(X) :- 
+    country(X, _, _, _, _, _, _, _).
 
 
 % Question 5
-larger(C1, C2) :- country(C1, _, _, _, A1, _, _, _),
-                  country(C2, _, _, _, A2, _, _, _),
-                  A1 > A2.
+larger(C1, C2) :- 
+    country(C1, _, _, _, A1, _, _, _),
+    country(C2, _, _, _, A2, _, _, _),
+    A1 > A2.
 
 % Question 6
-river_country(River, Country) :- river(River, CountryList),
-                                 country(Country),
-                                 member(Country, CountryList). 
+river_country(River, Country) :- 
+    river(River, CountryList),
+    country(Country),
+    member(Country, CountryList). 
 
 
-country_region(Country, Region) :- country(Country, Region, _, _, _, _, _, _).
+country_region(Country, Region) :- 
+    country(Country, Region, _, _, _, _, _, _).
 
 
 % Give a query to find a river that flows between countries in different
