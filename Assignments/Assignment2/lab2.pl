@@ -22,14 +22,16 @@ interleave([[H|T]|Tail], List) :-
 */
 
 
-
+% Returns an answer proportional to length of smaller list.
 interleave([],[]).
-interleave([[]|Tail],Rest) :- interleave([],Rest).
-interleave([[Head1|Tail1]|Tail],[Head1|Rest]) :-
-append(Tail,[Tail1],RestA),
-interleave(RestA,Rest).
+interleave([[]|T], Acc) :- interleave([], Acc).
+interleave([[H|T]|Tail], [H|Rest]) :-
+    append(Tail, [T], NewTail),
+    interleave(NewTail, Rest).
 
 
+
+% Returns answer not taking into account proper length of final list.
 interleaving_join([], []).
 
 interleaving_join([[]|X], Y):- 
