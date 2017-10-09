@@ -24,20 +24,29 @@ between/3
 
 
 puzzle_solution(Puzzle) :-
-    length(Puzzle, N), 
+    length(Puzzle, N),
+    (N #= 2 ; N #= 3; N #= 4),
     maplist(same_length(Puzzle), Puzzle),
-    (N = 2 ; N = 3; N = 4),
-    Puzzle = [[0,W,X],
+    Puzzle = [[_,W,X],
               [Y,A,B],
               [Z,C,A]],
     Puzzle = [R1, [R2H|R2T], [R3H|R3T]],
 
     % Check that all values are in the domain.
     append([R2T, R3T], Vs), Vs ins 1..9,
+    
 
     maplist(all_distinct, [R2T, R3T]),
     transpose([R2T, R3T], Columns),
-    maplist(all_distinct, Columns).
+    maplist(all_distinct, Columns), 
+    
+
+    (Y #= A + B ; Y #= A * B),
+    (Z #= C + A ; Z #= C * A),
+    (W #= C + A ; W #= C * A),
+    (X #= B + A ; X #= B * A),
+    maplist(writeln, Puzzle).
+
 
 
 
@@ -76,29 +85,54 @@ product_list(Ns, Product) :-
 first_element([E|_], E).
 
 
-times(W,X,Y,Z) :-
-    ( integer(W), integer(X), integer(Y) ->
-        Z is W*X + Y
-    ;   
-      integer(Z) ->
-        ( integer(X) ->
-            divmod(Z, X, W, Y)
-        ; 
-          integer(W) ->
-            divmod(Z, W, X, Y)
-        ;
-          throw(error(instantiation_error, context(times/4,_)))
-        )
-    ).
+sum_eq(Sum, List) :- sum(List, #=, Sum).
+
+square_diagonal(Rows, Ds) :- foldl(diagonal, Rows, Ds, [], _).
+
+diagonal(Row, D, Prefix0, Prefix) :-
+        append(Prefix0, [D|_], Row),
+        same_length([_|Prefix0], Prefix).
 
 
-/* Test Cases
+
+
+/* Test Cases (2 x 2)
+
+% true.
+
+puzzle_solution([[0,11,36],
+                 [13,_,_],
+                 [18,_,_]]).
+
 puzzle_solution([[0,11,36],
                  [13,9,4],
                  [18,2,9]]).
+
+
+% Should get 9,4,2,9 which is true.
 puzzle_solution([[0,45,72],
                  [72,_,_],
                  [14,_,_]]).
-*/
 
+puzzle_solution([[0,45,72],
+                 [72,9,8],
+                 [14,5,9]]).
+
+
+puzzle_solution([[0,13,8],[6,_,_],[13,_,_]]).
+puzzle_solution([[0,13,8],[6,4,2],[13,9,4]]).
+
+
+puzzle_solution([[0,16,13],[42,_,_],[16,_,_]]).
+puzzle_solution([[0,16,13],[42,7,6],[16,9,7]]).
+
+
+puzzle_solution([[0,15,32],[32,_,_],[56,_,_]]).
+puzzle_solution([[0,15,32],[32,8,4],[56,7,8]]).
+
+
+puzzle_solution([[0,14,27],[27,_,_],[45,_,_]]).
+puzzle_solution([[0,14,27],[27,9,3],[45,5,9]]).
+
+*/
 
