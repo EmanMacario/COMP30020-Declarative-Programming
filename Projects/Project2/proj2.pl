@@ -28,10 +28,15 @@ puzzle_solution(Puzzle) :-
     maplist(same_length(Puzzle), Puzzle),
     ( N #= 3 ->
         puzzle_solution2(Puzzle)
-    ;
+    ; N #= 4 ->
         puzzle_solution3(Puzzle)
+    ;   puzzle_solution4(Puzzle)
     ).
+
+    % Write out the puzzle solution.
+    %maplist(writeln, Puzzle).
     
+
 
 
 % Predicate to solve 2x2 puzzles
@@ -50,13 +55,11 @@ puzzle_solution2(Puzzle) :-
     maplist(all_distinct, Columns), 
     
     % Set arithmetic constraints.
-    (Y #= A + B ; Y #= A * B),
-    (Z #= C + A ; Z #= C * A),
-    (W #= C + A ; W #= C * A),
-    (X #= B + A ; X #= B * A),
+    (sum_eq(Y, R2T) ; Y #= A * B),
+    (sum_eq(Z, R3T) ; Z #= C * A),
+    (sum_eq(W, R3T) ; W #= C * A),
+    (sum_eq(X, [B,A]) ; X #= B * A).
 
-    % Write out the puzzle solution.
-    maplist(writeln, Puzzle).
 
 
 % Predicate to solve 3x3 puzzles.
@@ -81,10 +84,52 @@ puzzle_solution3(Puzzle) :-
     (F #= K + L + X ; F #= K * L * X),
     (A #= X + I + K ; A #= X * I * K),
     (B #= G + X + L ; B #= G * X * L),
-    (C #= H + J + X ; C #= H * J * X),
+    (C #= H + J + X ; C #= H * J * X).
 
-    % Write out the puzzle solution.
-    maplist(writeln, Puzzle).
+
+
+% Predicate to solve 4x4 puzzles.
+puzzle_solution4(Puzzle).
+
+
+
+% multiply/3 is a TRO predicate to multiply two integers.
+multiply(X, Y, XY) :-
+    multiply(X, Y, 0, XY).
+multiply(X, Y, A, XYA) :-
+    ( X = 0 ->
+        XYA = A
+    ;   X1 is X-1,
+        A1 is A+Y,
+        multiply(X1, Y, A1, XYA)
+    ).
+
+
+% product_list/2 calculates the product of all integers in a list.
+product_eq(Product, List) :-
+    foldl(multiply, List, 1, Product).
+
+row_product_eq([N|Ns]) :-
+    product_eq(N, Ns).
+
+
+sum_eq(Sum, List) :- sum(List, #=, Sum).
+
+row_sum_eq([N|Ns]) :- sum_eq(N, Ns).
+
+
+
+square_diagonal(Rows, Ds) :- foldl(diagonal, Rows, Ds, [], _).
+
+diagonal(Row, D, Prefix0, Prefix) :-
+        append(Prefix0, [D|_], Row),
+        same_length([_|Prefix0], Prefix).
+
+
+
+
+
+
 
 
 
@@ -104,37 +149,10 @@ sum(Ns, Sum) :-
 
 
 
-% multiply/3 is a TRO predicate to multiply two integers.
-multiply(X, Y, XY) :-
-    multiply(X, Y, 0, XY).
-multiply(X, Y, A, XYA) :-
-    ( X = 0 ->
-        XYA = A
-    ;   X1 is X-1,
-        A1 is A+Y,
-        multiply(X1, Y, A1, XYA)
-    ).
-
-% product_list/2 calculates the product of all integers in a list.
-product_list(Ns, Product) :-
-    foldl(multiply, Ns, 1, Product).
-
-
-% Gets the first element of a list.
-first_element([E|_], E).
-
-
-sum_eq(Sum, List) :- sum(List, #=, Sum).
-
-square_diagonal(Rows, Ds) :- foldl(diagonal, Rows, Ds, [], _).
-
-diagonal(Row, D, Prefix0, Prefix) :-
-        append(Prefix0, [D|_], Row),
-        same_length([_|Prefix0], Prefix).
 
 
 
-
+/******************************************************************************/
 /* Test Cases (2 x 2)
 
 % true.
@@ -209,15 +227,27 @@ puzzle_solution([[0, 14,140,40],
                  [60, 3, 5, 4]]).
 
 puzzle_solution([[0,14,16,18],[189,_,_,_],[17,_,_,_],[60,_,_,_]]). 
-puzzle_solution([[0,14,16,18],[189,3,9,7],[17,6,3,8],[60,5,4,3]]).
+puzzle_solution([[0,  14,16,18],
+                 [189, 3, 9, 7],
+                 [17,  6, 3, 8],
+                 [60,  5, 4, 3]]).
 
 puzzle_solution([[0,42,16,9],[48,_,_,_],[24,_,_,_],[105,_,_,_]]). 
-puzzle_solution([[0,42,16,9],[48,3,8,2],[24,2,3,4],[105,7,5,3]]).
+puzzle_solution([[0, 42,16,9],
+                 [48, 3, 8,2],
+                 [24, 2, 3,4],
+                 [105,7, 5,3]]).
 
 puzzle_solution([[0,14,189,20],[14,_,_,_],[18,_,_,_],[63,_,_,_]]). 
-puzzle_solution([[0,14,189,20],[14,7,3,4],[18,2,7,9],[63,1,9,7]]).
+puzzle_solution([[0, 14,189,20],
+                 [14, 7,  3, 4],
+                 [18, 2,  7, 9],
+                 [63, 1,  9, 7]]).
 
 puzzle_solution([[0,11,9,162],[14,_,_,_],[18,_,_,_],[84,_,_,_]]). 
-puzzle_solution([[0,11,9,162],[14,3,2,9],[18,1,3,6],[84,7,4,3]]).
+puzzle_solution([[0, 11, 9, 162],
+                 [14, 3, 2,  9],
+                 [18, 1, 3,  6],
+                 [84, 7, 4,  3]]).
 */
 
