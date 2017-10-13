@@ -10,6 +10,9 @@
 
 
 
+/* Note to self: Check out labelling/2 or label/1 for the unground variable shit */
+
+
 /* Useful predicates
 integer/1
 var/1
@@ -129,6 +132,8 @@ diagonal(Row, D, Prefix0, Prefix) :-
 
 
 
+% Set the variable E.g. A in 1..2.
+% Then test a row or column exactly after it is finished.
 
 
 
