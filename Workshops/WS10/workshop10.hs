@@ -8,6 +8,15 @@ import Data.Char (isDigit, digitToInt)
 import System.IO (hFlush, stdout)
 
 
+-- Aside: Monads
+dealWithIt :: Nullable a -> (a -> Nullable b) -> Nullable b
+dealWithIt v f = case v of
+                    Null -> Null
+                    Some x -> Some $ f x
+
+
+
+
 -- Question 1
 maybe_tail :: [a] -> Maybe [a]
 maybe_tail [] = Nothing
@@ -45,5 +54,34 @@ x = (Node (Node Empty 1 Empty) 2 (Node Empty 3 Empty))
 
 
 -- Question 3
+{-
 str_to_num :: String -> Maybe Int
 str_to_num (c:cs) = 
+    | isDigit c = putStrLn $ digitToInt c >>= \_ -> str_to_num cs
+    | otherwise = Nothing
+
+
+all_digits [] = True
+all_digits (c:cs) = isDigit c && all_digits cs
+-}
+
+
+
+-- Question 4
+
+
+
+
+-- Question 5
+
+
+
+-- Aside: List comprehension is syntactic sugar for a do statement
+possiblePairs :: [a] -> [b] -> [(a,b)]
+possiblePairs xs ys  = do
+    x <- xs
+    y <- ys
+    return (x,y)
+
+
+-- Read 'A Fistful of Monads' from LYAHS
