@@ -8,10 +8,7 @@
 
 :- ensure_loaded(library(clpfd)).
 
-
-
 /* Note to self: Check out labelling/2 or label/1 for the unground variable shit */
-
 
 /* Useful predicates
 integer/1
@@ -29,116 +26,89 @@ between/3
 puzzle_solution(Puzzle) :-
     length(Puzzle, N),
     maplist(same_length(Puzzle), Puzzle),
-    ( N #= 3 ->
-        puzzle_solution2(Puzzle)
-    ; N #= 4 ->
-        puzzle_solution3(Puzzle)
-    ;   puzzle_solution4(Puzzle)
-    ).
-
-    % Write out the puzzle solution.
-    %maplist(writeln, Puzzle).
-    
+    square_diagonal(Puzzle, Ds), 
+    check_diagonal(Ds),
+    Puzzle = [_|Rows],
+    maplist(check_row, Rows),
+    transpose(Puzzle, TPuzzle),
+    TPuzzle = [_|Cols],
+    maplist(check_row, Cols),
+    maplist(writeln, Puzzle).
 
 
 
-% Predicate to solve 2x2 puzzles
-puzzle_solution2(Puzzle) :-
-    Puzzle = [[_,W,X],
-              [Y,A,B],
-              [Z,C,A]],
-    Puzzle = [_, [_|R2T], [_|R3T]],
-
-    % Check that all values are in the domain.
-    append([R2T, R3T], Vs), Vs ins 1..9,
-    
-    % Check each row and column is distinct.
-    maplist(all_distinct, [R2T, R3T]),
-    transpose([R2T, R3T], Columns),
-    maplist(all_distinct, Columns), 
-    
-    % Set arithmetic constraints.
-    (sum_eq(Y, R2T) ; Y #= A * B),
-    (sum_eq(Z, R3T) ; Z #= C * A),
-    (sum_eq(W, R3T) ; W #= C * A),
-    (sum_eq(X, [B,A]) ; X #= B * A).
-
-
-
-% Predicate to solve 3x3 puzzles.
-puzzle_solution3(Puzzle) :-
-    Puzzle = [[_, A, B, C],
-              [D, X, G, H],
-              [E, I, X, J],
-              [F, K, L, X]],
-    Puzzle = [_, [_|R2T], [_|R3T], [_|R4T]],
-
-    % Check that all values are in the domain.
-    append([R2T, R3T, R4T], Vs), Vs ins 1..9,
-
-    % Check each row and column is distinct.
-    maplist(all_distinct, [R2T, R3T, R4T]),
-    transpose([R2T, R3T, R4T], Columns),
-    maplist(all_distinct, Columns),
-
-    % Set arithmetic constraints.
-    (D #= X + G + H ; D #= X * G * H),
-    (E #= I + X + J ; E #= I * X * J),
-    (F #= K + L + X ; F #= K * L * X),
-    (A #= X + I + K ; A #= X * I * K),
-    (B #= G + X + L ; B #= G * X * L),
-    (C #= H + J + X ; C #= H * J * X).
-
-
-
-% Predicate to solve 4x4 puzzles.
-puzzle_solution4(Puzzle).
-
-
+/* TRO Multiply predicate. */
 
 % multiply/3 is a TRO predicate to multiply two integers.
 multiply(X, Y, XY) :-
     multiply(X, Y, 0, XY).
 multiply(X, Y, A, XYA) :-
-    ( X = 0 ->
-        XYA = A
-    ;   X1 is X-1,
-        A1 is A+Y,
+    ( X #= 0 ->
+        XYA #= A
+    ;   X1 #= X-1,
+        A1 #= A+Y,
         multiply(X1, Y, A1, XYA)
     ).
 
 
-% product_list/2 calculates the product of all integers in a list.
+/* Row checking predicates (for sum and product). */
+check_row([N|Ns]) :-
+    all_different(Ns),
+    Ns ins 1..9,
+    ( ground([N|Ns]) ->
+        (row_product_eq([N|Ns]) ; row_sum_eq([N|Ns]))
+    ;
+        labeling([ff], Ns),
+        (row_product_eq([N|Ns]) ; row_sum_eq([N|Ns]))
+    ).
+    
+
 product_eq(Product, List) :-
     foldl(multiply, List, 1, Product).
 
 row_product_eq([N|Ns]) :-
     product_eq(N, Ns).
 
+sum_eq(Sum, List) :- 
+    sum(List, #=, Sum).
 
-sum_eq(Sum, List) :- sum(List, #=, Sum).
-
-row_sum_eq([N|Ns]) :- sum_eq(N, Ns).
-
+row_sum_eq([N|Ns]) :- 
+    sum_eq(N, Ns).
 
 
-square_diagonal(Rows, Ds) :- foldl(diagonal, Rows, Ds, [], _).
+
+/* Diagonal checking. */
+check_diagonal([_|Ns]) :- 
+    all_same(Ns),
+    Ns ins 1..9.
+
+square_diagonal(Rows, Ds) :- 
+    foldl(diagonal, Rows, Ds, [], _).
 
 diagonal(Row, D, Prefix0, Prefix) :-
         append(Prefix0, [D|_], Row),
         same_length([_|Prefix0], Prefix).
 
 
+/* Drop predicate straight from lectures. */
+drop(N, List, Back) :- length(Front, N),
+     append(Front, Back, List).
 
 
 
-% Set the variable E.g. A in 1..2.
-% Then test a row or column exactly after it is finished.
+/* All same predicate from tutes. */
+% Implement the predicate all_same(List) such that every element of
+% List is identical.  This should hold for empty and single element
+% lists, as well.
+
+all_same([]).
+all_same([_H]).
+all_same([H|T]) :- 
+    T = [H|_T1],
+    all_same(T).
 
 
-
-
-
+/* Tail recursive sum list predicate. */
 % sum_list/2 is a TRO predicate to sum a list.
 sum_list(L, Sum) :-
     sum_list(L, 0, Sum).
@@ -153,6 +123,16 @@ sum(Ns, Sum) :-
     foldl(plus, Ns, 0, Sum).
 
 
+/* Magic hexagon shit. */
+sum38(Vs) :- sum(Vs, #=, 38).
+
+magic_hexagon(Vs) :-
+        Vs = [A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S],
+        Vs ins 1..19,
+        all_different(Vs),
+        maplist(sum38, [[A,B,C], [D,E,F,G], [H,I,J,K,L], [M,N,O,P], [Q,R,S],
+                        [H,D,A], [M,I,E,B], [Q,N,J,F,C], [R,O,K,G], [S,P,L],
+                        [C,G,L], [B,F,K,P], [A,E,J,O,S], [D,I,N,R], [H,M,Q]]).
 
 
 
