@@ -8,20 +8,6 @@
 
 :- ensure_loaded(library(clpfd)).
 
-/* Note to self: Check out labelling/2 or label/1 for the unground variable shit */
-
-/* Useful predicates
-integer/1
-var/1
-nonvar/1
-ins
-ground/1
-sort/2
-msort/2
-keysort/2
-between/3
-*/
-
 
 puzzle_solution(Puzzle) :-
     length(Puzzle, N),
@@ -32,20 +18,19 @@ puzzle_solution(Puzzle) :-
     maplist(check_row, Rows),
     transpose(Puzzle, TPuzzle),
     TPuzzle = [_|Cols],
-    maplist(check_row, Cols),
-    maplist(writeln, Puzzle).
-
+    maplist(check_row, Cols).
+    %maplist(writeln, Puzzle).
 
 
 /* TRO Multiply predicate. */
-
 % multiply/3 is a TRO predicate to multiply two integers.
 multiply(X, Y, XY) :-
     multiply(X, Y, 0, XY).
 multiply(X, Y, A, XYA) :-
     ( X #= 0 ->
         XYA #= A
-    ;   X1 #= X-1,
+    ;   
+        X1 #= X-1,
         A1 #= A+Y,
         multiply(X1, Y, A1, XYA)
     ).
@@ -53,25 +38,46 @@ multiply(X, Y, A, XYA) :-
 
 /* Row checking predicates (for sum and product). */
 check_row([N|Ns]) :-
+    ground(N),
     all_different(Ns),
     Ns ins 1..9,
-    ( ground([N|Ns]) ->
+    ( ground(Ns) ->
         (row_product_eq([N|Ns]) ; row_sum_eq([N|Ns]))
     ;
-        labeling([ff], Ns),
+        labeling([ffc], Ns),
         (row_product_eq([N|Ns]) ; row_sum_eq([N|Ns]))
     ).
-    
 
+
+/* TRO predicate to get the product of all numbers in a list. */
 product_eq(Product, List) :-
-    foldl(multiply, List, 1, Product).
+    ( List = [] ->
+        Product #= 0
+    ;
+        product_eq(Product, 1, List)
+    ).
 
+product_eq(A, A, []).
+product_eq(Product, A0, [N|Ns]) :-
+    A1 #= A0 * N,
+    product_eq(Product, A1, Ns). 
+
+/* Checks if the first element of a list is equal
+   to the product of all its elements. */
 row_product_eq([N|Ns]) :-
     product_eq(N, Ns).
 
-sum_eq(Sum, List) :- 
-    sum(List, #=, Sum).
 
+/* Get sum of all integers in a list */
+sum_eq(Sum, List) :-
+    sum_eq(List, 0, Sum).
+sum_eq([], A, A).
+sum_eq([N|Ns], A0, Sum) :- 
+    A1 #= A0 + N,
+    sum_eq(Ns, A1, Sum).
+
+/* Checks if the first element of a list is equal
+   to the sum of all elements in the tail. */
 row_sum_eq([N|Ns]) :- 
     sum_eq(N, Ns).
 
@@ -82,18 +88,40 @@ check_diagonal([_|Ns]) :-
     all_same(Ns),
     Ns ins 1..9.
 
+/*
 square_diagonal(Rows, Ds) :- 
     foldl(diagonal, Rows, Ds, [], _).
 
 diagonal(Row, D, Prefix0, Prefix) :-
         append(Prefix0, [D|_], Row),
         same_length([_|Prefix0], Prefix).
+*/
+
+/*
+square_diagonal(Rows, Ds) :-
+    square_diagonal(Rows, _, [], Ds).
+
+square_diagonal([], _, Ds, Ds).
+square_diagonal([R|Rs], D0, P0, POut) :-
+    append(P0, [D0|_], R),
+    same_length([_|P0], P1),
+    square_diagonal(Rs, D0, P1, POut).
+    */
 
 
-/* Drop predicate straight from lectures. */
-drop(N, List, Back) :- length(Front, N),
-     append(Front, Back, List).
 
+% Another try
+square_diagonal(Rows, Ds) :-
+    square_diagonal(Rows, [], [], Ds).
+
+
+% Base case
+square_diagonal([], _, Ds, Ds).
+square_diagonal([R|Rs], PrefixIn, DIn, Ds) :-
+    append(PrefixIn, [D|_], R),
+    same_length([_|PrefixIn], PrefixOut),
+    append(DIn, [D], DOut),
+    square_diagonal(Rs, PrefixOut, DOut, Ds).
 
 
 /* All same predicate from tutes. */
@@ -108,131 +136,23 @@ all_same([H|T]) :-
     all_same(T).
 
 
-/* Tail recursive sum list predicate. */
-% sum_list/2 is a TRO predicate to sum a list.
-sum_list(L, Sum) :-
-    sum_list(L, 0, Sum).
-sum_list([], A, A).
-sum_list([N|Ns], A0, Sum) :- 
-    A1 is A0 + N,
-    sum_list(Ns, A1, Sum).
+
+/* Create tuples of size n (e.g. A-B-C) */
+n_tuples([_,N|Ns], Tuples) :-
+    n_tuples(Ns, N, Tuples).
+
+n_tuples([], A, A).
+n_tuples([N|Ns], A0, AOut) :-
+    A1 = A0-N,
+    n_tuples(Ns, A1, AOut).
 
 
-% Or could use this fold to do the same thing.
-sum(Ns, Sum) :-
-    foldl(plus, Ns, 0, Sum).
+/* E.g.
 
+    exclude(ground, Rows, UngroundRows).
 
-/* Magic hexagon shit. */
-sum38(Vs) :- sum(Vs, #=, 38).
-
-magic_hexagon(Vs) :-
-        Vs = [A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S],
-        Vs ins 1..19,
-        all_different(Vs),
-        maplist(sum38, [[A,B,C], [D,E,F,G], [H,I,J,K,L], [M,N,O,P], [Q,R,S],
-                        [H,D,A], [M,I,E,B], [Q,N,J,F,C], [R,O,K,G], [S,P,L],
-                        [C,G,L], [B,F,K,P], [A,E,J,O,S], [D,I,N,R], [H,M,Q]]).
-
-
-
-
-/******************************************************************************/
-/* Test Cases (2 x 2)
-
-% true.
-
-puzzle_solution([[0,11,36],
-                 [13,_,_],
-                 [18,_,_]]).
-
-puzzle_solution([[0,11,36],
-                 [13,9,4],
-                 [18,2,9]]).
-
-
-% Should get 9,4,2,9 which is true.
-puzzle_solution([[0,45,72],
-                 [72,_,_],
-                 [14,_,_]]).
-
-puzzle_solution([[0,45,72],
-                 [72,9,8],
-                 [14,5,9]]).
-
-
-puzzle_solution([[0,13,8],[6,_,_],[13,_,_]]).
-puzzle_solution([[0,13,8],[6,4,2],[13,9,4]]).
-
-
-puzzle_solution([[0,16,13],[42,_,_],[16,_,_]]).
-puzzle_solution([[0,16,13],[42,7,6],[16,9,7]]).
-
-
-puzzle_solution([[0,15,32],[32,_,_],[56,_,_]]).
-puzzle_solution([[0,15,32],[32,8,4],[56,7,8]]).
-
-
-puzzle_solution([[0,14,27],[27,_,_],[45,_,_]]).
-puzzle_solution([[0,14,27],[27,9,3],[45,5,9]]).
-
+    Z = [72, _, _], n_tuples(Z, X), bagof(X, check_row(Z), L).
 */
 
 
-/* Test cases (3x3)
-puzzle_solution([[0,11,54,45],[16,_,_,9],[35,_,_,_],[27,_,_,_]]).
-puzzle_solution([[0, 11,54,45],
-                 [16, 1, 6, 9],
-                 [35, 7, 1, 5],
-                 [27, 3, 9, 1]]).
-
-
-puzzle_solution([[0,252,35,168],[11,_,_,_],[19,_,_,_],[21,_,_,_]]). 
-puzzle_solution([[0,252,35,168],
-                 [11, 7, 1, 3],
-                 [19, 4, 7, 8],
-                 [21, 9, 5, 7]]).
-
-puzzle_solution([[0,14,18,48],[20,_,_,_],[9,_,_,_],[126,_,_,_]]). 
-puzzle_solution([[0, 14,18,48],
-                 [20, 3, 9, 8],
-                 [9,  4, 3, 2],
-                 [126,7, 6, 3]]).
-
-puzzle_solution([[0,72,336,23],[22,_,_,_],[17,_,_,_],[18,_,_,_]]). 
-puzzle_solution([[0, 72,336,23],
-                 [22, 6, 7, 9],
-                 [17, 3, 6, 8],
-                 [18, 4, 8, 6]]).
-
-puzzle_solution([[0,14,140,40],[56,_,_,_],[140,_,_,_],[60,_,_,_]]). 
-puzzle_solution([[0, 14,140,40],
-                 [56, 4, 7, 2],
-                 [140,7, 4, 5],
-                 [60, 3, 5, 4]]).
-
-puzzle_solution([[0,14,16,18],[189,_,_,_],[17,_,_,_],[60,_,_,_]]). 
-puzzle_solution([[0,  14,16,18],
-                 [189, 3, 9, 7],
-                 [17,  6, 3, 8],
-                 [60,  5, 4, 3]]).
-
-puzzle_solution([[0,42,16,9],[48,_,_,_],[24,_,_,_],[105,_,_,_]]). 
-puzzle_solution([[0, 42,16,9],
-                 [48, 3, 8,2],
-                 [24, 2, 3,4],
-                 [105,7, 5,3]]).
-
-puzzle_solution([[0,14,189,20],[14,_,_,_],[18,_,_,_],[63,_,_,_]]). 
-puzzle_solution([[0, 14,189,20],
-                 [14, 7,  3, 4],
-                 [18, 2,  7, 9],
-                 [63, 1,  9, 7]]).
-
-puzzle_solution([[0,11,9,162],[14,_,_,_],[18,_,_,_],[84,_,_,_]]). 
-puzzle_solution([[0, 11, 9, 162],
-                 [14, 3, 2,  9],
-                 [18, 1, 3,  6],
-                 [84, 7, 4,  3]]).
-*/
-
+/* Predicate that filters unground rows (or columns). */
