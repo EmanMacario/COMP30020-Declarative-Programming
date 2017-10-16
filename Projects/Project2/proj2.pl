@@ -68,7 +68,10 @@ puzzle_solution(Puzzle) :-
 
     % Check that columns satisfy puzzle constraints.
     TPuzzle = [_|Cols],
-    maplist(check_row, Cols).
+    maplist(check_row, Cols),
+
+    % Write out the puzzle solution.
+    maplist(writeln, Puzzle).
 
 
 % ============================================================================ %
