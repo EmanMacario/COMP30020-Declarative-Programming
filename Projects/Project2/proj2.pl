@@ -68,10 +68,10 @@ puzzle_solution(Puzzle) :-
 
     % Check that columns satisfy puzzle constraints.
     TPuzzle = [_|Cols],
-    maplist(check_row, Cols),
+    maplist(check_row, Cols).
 
     % Write out the puzzle solution.
-    maplist(writeln, Puzzle).
+    % maplist(writeln, Puzzle).
 
 
 % ============================================================================ %
@@ -140,22 +140,6 @@ check_diagonal([_|Ns]) :-
 % ============================================================================ %
 % Predicates to check the rows and columns.
 % ============================================================================ %
-
-/* 
-** Multiplies two integers X and Y, 
-** to get their product, XY.
-*/
-multiply(X, Y, XY) :-
-    multiply(X, Y, 0, XY).
-multiply(X, Y, A, XY) :-
-    ( X #= 0 ->
-        XY #= A
-    ;   
-        X1 #= X-1,
-        A1 #= A+Y,
-        multiply(X1, Y, A1, XY)
-    ).
-
 
 /*
 ** Takes a List of integers and calculates the 
